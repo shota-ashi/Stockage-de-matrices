@@ -1,0 +1,9 @@
+*.o
+*.exe
+*.out
+.vscode/
+__MACOSX/
+main
+test_ex1
+test_ex2
+test_ex3
