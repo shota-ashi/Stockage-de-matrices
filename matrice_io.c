@@ -44,7 +44,7 @@ void mat_afficher(const char *nom, const Matrice *m)
     }
     printf("%s (%d x %d) :\n", nom, m->nb_lignes, m->nb_colonnes);
 
-    /* (2.a) À COMPLÉTER : pour chaque ligne i, afficher chaque
+    /* (2.a) COMPLÉTÉ : pour chaque ligne i, afficher chaque
      *       coefficient avec printf(" %8d", m->coef[i][j]),
      *       puis passer à la ligne avec putchar('\n').               */
     
@@ -64,7 +64,7 @@ MatErreur mat_ecrire(FILE *f, const Matrice *m)
     if (fprintf(f, "%d %d\n", m->nb_lignes, m->nb_colonnes) < 0)
         return MAT_ERR_ECRITURE;
 
-    /* (2.b) À COMPLÉTER : pour chaque ligne i de la matrice :
+    /* (2.b) COMPLÉTÉ : pour chaque ligne i de la matrice :
      *         - écrire les coefficients séparés par UN espace :
      *             le premier (j == 0) avec "%d", les autres avec " %d" ;
      *         - terminer la ligne avec fputc('\n', f) ;
@@ -102,14 +102,14 @@ MatErreur mat_lire(FILE *f, Matrice *res)
     if (err != MAT_OK)
         return err;
 
-    /* (2.c) À COMPLÉTER : si nb_lignes ou nb_colonnes n'est pas compris
+    /* (2.c) COMPLÉTÉ : si nb_lignes ou nb_colonnes n'est pas compris
      *       entre 1 et MAT_DIM_MAX, renvoyer MAT_ERR_FORMAT
      *       (c'est le contenu du fichier qui est faux).               */
     if (nb_lignes < 1 || nb_lignes > MAT_DIM_MAX || nb_colonnes < 1 || nb_colonnes > MAT_DIM_MAX)
         return MAT_ERR_FORMAT;
 
 
-    /* (2.d) À COMPLÉTER : déclarer une matrice LOCALE et l'allouer :
+    /* (2.d) COMPLÉTÉ : déclarer une matrice LOCALE et l'allouer :
      *         Matrice tmp;
      *         err = mat_allouer(&tmp, nb_lignes, nb_colonnes);
      *         if (err != MAT_OK) return err;                          */
@@ -119,7 +119,7 @@ MatErreur mat_lire(FILE *f, Matrice *res)
         return err;
 
 
-    /* (2.e) À COMPLÉTER : deux boucles imbriquées (i, puis j) qui lisent
+    /* (2.e) COMPLÉTÉ : deux boucles imbriquées (i, puis j) qui lisent
      *       chaque coefficient avec lire_entier(f, &tmp.coef[i][j]).
      *       Si une lecture échoue :
      *         mat_detruire(&tmp);  return err;                        */
@@ -133,10 +133,10 @@ MatErreur mat_lire(FILE *f, Matrice *res)
         }
     }
 
-    /* (2.f) À COMPLÉTER : tout a réussi, on transfère le résultat :
+    /* (2.f) COMPLÉTÉ : tout a réussi, on transfère le résultat :
      *         *res = tmp;  return MAT_OK;                             */
     *res = tmp;
     return MAT_OK;
     
-    //return MAT_ERR_LECTURE;  /* ligne provisoire : à remplacer en (2.f) */
+    /*return MAT_ERR_LECTURE; ligne provisoire*/
 }
