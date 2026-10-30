@@ -26,6 +26,7 @@ En revanche, si on fait `Matrice b = a;`, C réalise une copie superficielle : `
 ### Q3.4 : Initialisation systématique avec `MATRICE_VIDE`
 Commencer par `*res = MATRICE_VIDE` garantit que la variable reçue est immédiatement dans un état valide et prévisible (pointeur à `NULL`, dimensions à 0). Si la fonction échoue ensuite (dimensions hors limites ou échec de `calloc`), la matrice de l'appelant reste propre au lieu de conserver des valeurs poubelles non initialisées
 
+
 ### Q4.1 :
 Cela permet de garantir que le résultat n’est transmis à *res que si toute la lecture réussit. Cela permet de valider le principe d'atomicité de la fonction en ne renvoyant que soit la matrice entièrement lue, soit une matrice vide.
 
@@ -67,7 +68,37 @@ M (4 x 3) :
 Bilan : 14 / 14 verifications reussies.
 
 
+### Q5.1 :
+Non const ne protège que les champs de la structure. Pour interdire cette affectation, il faudrait modifier la structure même en mettant les coefficients constants.
 
+### Q5.2 :
+Pour le problème de l'aliasing. Dans l'implémentation la matrice a serais écrasée par la matrice null et la fonction renverrais b si le programme ne soulève pas d'erreur.
+
+### Q5.3 :
+Il y a trois boucles imbriquées en a->nb_lignes, b->nb_colonnes, a->nb_colonnes donc la fonction effectue n*p*q multiplications. Pour des matrices de dimensions 1000*1000 la fonction effectuerais 1 000 000 000 multiplications
+
+### Q5.4 :
+Car en C un dépassement de capacité pour une opération sur des entiers signés provoque un comportement indéfini et qu'additionner a à un nombre négatif soulèverais l'erreur bien qu'il n'y en n’a pas.
+
+=== Exercice 3 : addition ===
+[OK]    (3.a) (2 x 3) + (3 x 2) : MAT_ERR_DIMENSIONS
+[OK]    (3.d) (2 x 3) + (2 x 3) : MAT_OK
+[OK]    (3.c) a + b est correct
+[OK]    a et b n'ont pas ete modifiees
+[OK]    (3.b) le resultat possede sa propre memoire
+[OK]    (3.c) INT_MAX + 1 : MAT_ERR_DEPASSEMENT
+=== Exercice 3 : multiplication ===
+[OK]    (3.e) (2 x 3) x (2 x 3) : MAT_ERR_DIMENSIONS
+[OK]    (3.h) (2 x 3) x (3 x 2) : MAT_OK
+[OK]    (3.g) a x c = (58 64 / 139 154)
+[OK]    (3.f) (3 x 2) x (2 x 3) donne une matrice 3 x 3
+[OK]    a et c n'ont pas ete modifiees
+[OK]    (3.g) 2 x 10^10 depasse INT_MAX : MAT_ERR_DEPASSEMENT
+=== Exercice 3 : cas particuliers ===
+[OK]    resultat = entree refuse, a reste intacte
+[OK]    (3.f) echec d'allocation : MAT_ERR_ALLOCATION, r vide
+
+Bilan : 14 / 14 verifications reussies.
 
 
 
@@ -80,5 +111,12 @@ test_ex2
 HEAP SUMMARY:
 in use at exit: 0 bytes in 0 blocks
 total heap usage: 51 allocs, 51 frees, 49,976 bytes allocated
+
+All heap blocks were freed -- no leaks are possible
+
+test_ex3
+HEAP SUMMARY:
+in use at exit: 0 bytes in 0 blocks
+total heap usage: 37 allocs, 37 frees, 1,412 bytes allocated
 
 All heap blocks were freed -- no leaks are possible
