@@ -26,6 +26,34 @@ En revanche, si on fait `Matrice b = a;`, C réalise une copie superficielle : `
 ### Q3.4 : Initialisation systématique avec `MATRICE_VIDE`
 Commencer par `*res = MATRICE_VIDE` garantit que la variable reçue est immédiatement dans un état valide et prévisible (pointeur à `NULL`, dimensions à 0). Si la fonction échoue ensuite (dimensions hors limites ou échec de `calloc`), la matrice de l'appelant reste propre au lieu de conserver des valeurs poubelles non initialisées
 
+## Après test : 
+ gcc -std=c11 -Wall -Wextra -Wpedantic -g -DMAT_TEST_ALLOC test_ex1.c matrice.c matrice_alloc.c -o test_ex1
+PS C:\Users\L\Desktop\INSA CVL\Semester 1\Programmation C\td_matrices> .\test_ex1
+=== Exercice 1 : matrice.c ===
+[OK]    (1.a) message pour MAT_ERR_DIMENSIONS
+[OK]    (1.a) message pour MAT_ERR_DEPASSEMENT
+[OK]    (1.b) une matrice 1 x 2 est valide
+[OK]    (1.b) NULL n'est pas valide
+[OK]    (1.b) MATRICE_VIDE n'est pas valide
+[OK]    (1.b) une matrice de 0 ligne n'est pas valide
+=== Exercice 1 : matrice_alloc.c ===
+[OK]    (1.c) mat_allouer refuse 0 ligne
+[OK]    (1.c) mat_allouer refuse -2 colonnes
+[OK]    (1.c) mat_allouer refuse une dimension > MAT_DIM_MAX
+[OK]    (1.e) mat_allouer(&m, 3, 4) renvoie MAT_OK
+[OK]    (1.e) m a 3 lignes et 4 colonnes
+[OK]    (1.d) tous les coefficients valent 0
+[OK]    (1.f) apres mat_detruire, m est vide
+[OK]    (1.f) un second mat_detruire est sans danger
+[OK]    (1.f) mat_detruire(NULL) ne plante pas
+=== Exercice 1 : echecs d'allocation simules ===
+[OK]    (1.d) chaque echec renvoie MAT_ERR_ALLOCATION et laisse *res vide
+
+Bilan : 16 / 16 verifications reussies.
+Pensez a verifier l'absence de fuite : valgrind --leak-check=full ./test_ex1
+PS C:\Users\L\Desktop\INSA CVL\Semester 1\Programmation C\td_matrices> 
+
+## Réponses aux questions de réflexion (Exercice 2)
 
 ### Q4.1 :
 Cela permet de garantir que le résultat n’est transmis à *res que si toute la lecture réussit. Cela permet de valider le principe d'atomicité de la fonction en ne renvoyant que soit la matrice entièrement lue, soit une matrice vide.
@@ -38,6 +66,8 @@ Il suffit d’écrire les deux matrices successivement dans le même fichier ave
 
 ### Q4.4 :
 fflush permet de forcer l’écriture des données se trouvant dans le tampon du flux de sortie. Cela ne dispense pas l’appelant d'appeler fclose car fflush n'a aucun action sur la fermeture du fichier
+
+## Après test : 
 
 === Exercice 2 : affichage (verification visuelle) ===
 M (4 x 3) :
@@ -67,6 +97,8 @@ M (4 x 3) :
 
 Bilan : 14 / 14 verifications reussies.
 
+## Réponses aux questions de réflexion (Exercice 3)
+
 
 ### Q5.1 :
 Non const ne protège que les champs de la structure. Pour interdire cette affectation, il faudrait modifier la structure même en mettant les coefficients constants.
@@ -79,6 +111,8 @@ Il y a trois boucles imbriquées en a->nb_lignes, b->nb_colonnes, a->nb_colonnes
 
 ### Q5.4 :
 Car en C un dépassement de capacité pour une opération sur des entiers signés provoque un comportement indéfini et qu'additionner a à un nombre négatif soulèverais l'erreur bien qu'il n'y en n’a pas.
+
+## Après test : 
 
 === Exercice 3 : addition ===
 [OK]    (3.a) (2 x 3) + (3 x 2) : MAT_ERR_DIMENSIONS
@@ -120,3 +154,74 @@ in use at exit: 0 bytes in 0 blocks
 total heap usage: 37 allocs, 37 frees, 1,412 bytes allocated
 
 All heap blocks were freed -- no leaks are possible
+
+
+---
+
+## Réponses aux questions de réflexion (Exercice 4)
+
+### Q6.1 : 
+`mat_lire` est une fonction de bibliothèque : elle ne sait pas dans quel contexte elle est utilisée. Un programme en ligne de commande affiche ses erreurs sur `stderr` en texte brut, mais une interface graphique les afficherait dans une boîte de dialogue
+
+
+### Q6.2 :
+
+En lecture, `fclose` ne peut pas provoquer de perte de données : il libère simplement les ressources associées au fichier. Même s'il échoue, les données ont déjà été lues et sont en mémoire ; ignorer l'erreur est acceptable.
+
+En écriture, c'est différent. Les données passées à `fwrite` ou `fprintf` ne sont pas nécessairement écrites sur le disque immédiatement.Tester `fclose` en écriture est donc indispensable pour signaler que le fichier de résultat est potentiellement incomplet ou corrompu.
+
+### Q6.3 :
+
+Les trois matrices `a`, `b` et `r` ont été allouées avec succès, mais `sauvegarder` échoue. Il faut donc libérer **trois matrices**.
+
+## Après test : 
+ gcc -std=c11 -Wall -Wextra -Wpedantic -g matrice.c matrice_alloc.c matrice_io.c matrice_calcul.c main.c -o demo_matrices
+PS C:\Users\L\Desktop\INSA CVL\Semester 1\Programmation C\td_matrices> ./demo_matrices add donnees/A.txt donnees/B.txt donnees/R_add.txt                                                       
+A (4 x 3) :
+       25       48       84
+       15       33       11
+       45       88       10
+        0       12       -5
+B (4 x 3) :
+        1        2        3
+        4        5        6
+        7        8        9
+       10       11       12
+R = A + B (4 x 3) :
+       26       50       87
+       19       38       17
+       52       96       19
+       10       23        7
+R├®sultat enregistr├® dans "donnees/R_add.txt".
+PS C:\Users\L\Desktop\INSA CVL\Semester 1\Programmation C\td_matrices> ./demo_matrices mul donnees/B.txt donnees/C.txt donnees/R_mul.txt                                                       
+A (4 x 3) :
+        1        2        3
+        4        5        6
+        7        8        9
+       10       11       12
+B (3 x 2) :
+        1        0
+        0        1
+        2       -1
+R = A x B (4 x 2) :
+        7       -1
+       16       -1
+       25       -1
+       34       -1
+R├®sultat enregistr├® dans "donnees/R_mul.txt".
+PS C:\Users\L\Desktop\INSA CVL\Semester 1\Programmation C\td_matrices> ./demo_matrices add donnees/A.txt donnees/C.txt donnees/R_err.txt
+A (4 x 3) :
+       25       48       84
+       15       33       11
+       45       88       10
+        0       12       -5
+B (3 x 2) :
+        1        0
+        0        1
+        2       -1
+Erreur : dimensions incompatibles (A : 4 x 3, B : 3 x 2)
+PS C:\Users\L\Desktop\INSA CVL\Semester 1\Programmation C\td_matrices> ./demo_matrices add donnees/invalide.txt donnees/B.txt donnees/R_err.txt
+Erreur : lecture de "donnees/invalide.txt" : fichier mal form├®
+PS C:\Users\L\Desktop\INSA CVL\Semester 1\Programmation C\td_matrices> ./demo_matrices toto donnees/A.txt donnees/B.txt donnees/R.txt
+Usage : C:\Users\L\Desktop\INSA CVL\Semester 1\Programmation C\td_matrices\demo_matrices.exe <add|mul> <fichier_A><fichier_B> <fichier_R>
+PS C:\Users\L\Desktop\INSA CVL\Semester 1\Programmation C\td_matrices> 
