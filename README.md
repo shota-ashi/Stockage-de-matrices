@@ -229,3 +229,86 @@ All heap blocks were freed -- no leaks are possible
 
 
 
+## Démonstration finale
+
+$ gcc -std=c11 -Wall -Wextra -Wpedantic -g main.c matrice.c matrice_alloc.c matrice_io.c matrice_calcul.c -o demo_matrices
+$
+
+### Sénario 2 :
+$ ./demo_matrices mul donnees/A.txt donnees/C.txt R_scenario2.txt
+A (4 x 3) :
+       25       48       84
+       15       33       11
+       45       88       10
+        0       12       -5
+B (3 x 2) :
+        1        0
+        0        1
+        2       -1
+R = A x B (4 x 2) :
+      193      -36
+       37       22
+       65       78
+      -10       17
+Résultat enregistré dans "R_scenario2.txt".
+$ echo $?
+0
+
+Résultat attendu pas d’erreur soulevée et résultat correct.
+
+### Sénario 6 :
+$ ./demo_matrices add donnees/invalide.txt donnees/B.txt R_scenario6.txt
+Erreur : lecture de "donnees/invalide.txt" : fichier mal formé
+$ echo $?
+1
+
+Résultat attendu erreur soulevée sur la mal formation du fichier et le fichier est nommé.
+
+### Sénario 8 :                                          
+$ valgrind --leak-check=full ./demo_matrices add donnees/A.txt donnees/B.txt "$DOSSIER_ABSENT/R_scenario8.txt"
+==2256== Memcheck, a memory error detector
+==2256== Copyright (C) 2002-2024, and GNU GPL'd, by Julian Seward et al.
+==2256== Using Valgrind-3.26.0 and LibVEX; rerun with -h for copyright info
+==2256== Command: ./demo_matrices add donnees/A.txt donnees/B.txt /R_scenario8.txt
+==2256== 
+A (4 x 3) :
+       25       48       84
+       15       33       11
+       45       88       10
+        0       12       -5
+B (4 x 3) :
+        1        2        3
+        4        5        6
+        7        8        9
+       10       11       12
+R = A + B (4 x 3) :
+       26       50       87
+       19       38       17
+       52       96       19
+       10       23        7
+Erreur : impossible de créer "/R_scenario8.txt" : Permission denied
+==2256== 
+==2256== HEAP SUMMARY:
+==2256==     in use at exit: 0 bytes in 0 blocks
+==2256==   total heap usage: 23 allocs, 23 frees, 3,726 bytes allocated
+==2256== 
+==2256== All heap blocks were freed -- no leaks are possible
+==2256== 
+==2256== For lists of detected and suppressed errors, rerun with: -s
+==2256== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+$ echo $?
+1
+
+Résultat attendu erreur soulevée pour la création sur l‘absence du dossier et les matrices allouées sont libérées.
+
+## Bilan et difficultés
+
+R_mult ne correspond pas à la multiplication de A et C et à provoquer un doute.
+Compression de ce que fait fflush.
+
+### Répartition du travail 
+
+
+### Aides extérieures 
+
+Aide ia pour pouvoir répondre aux questions.
