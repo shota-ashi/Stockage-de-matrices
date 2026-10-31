@@ -5,6 +5,7 @@
 ---
 
 ## Réponses aux questions de réflexion (Exercice 1)
+[matrice.c](matrice.c) [matrice_alloc.c](matrice_alloc.c)
 
 ### Q3.1 : 
 Le passage par pointeur (`Matrice *`) est indispensable pour modifier directement la variable de l'appelant. Cela permet de remettre son pointeur interne à `NULL` et ses dimensions à 0 après la libération. 
@@ -26,7 +27,8 @@ En revanche, si on fait `Matrice b = a;`, C réalise une copie superficielle : `
 ### Q3.4 : Initialisation systématique avec `MATRICE_VIDE`
 Commencer par `*res = MATRICE_VIDE` garantit que la variable reçue est immédiatement dans un état valide et prévisible (pointeur à `NULL`, dimensions à 0). Si la fonction échoue ensuite (dimensions hors limites ou échec de `calloc`), la matrice de l'appelant reste propre au lieu de conserver des valeurs poubelles non initialisées
 
-## Après test : 
+### Résultat test :
+
  gcc -std=c11 -Wall -Wextra -Wpedantic -g -DMAT_TEST_ALLOC test_ex1.c matrice.c matrice_alloc.c -o test_ex1
 PS C:\Users\L\Desktop\INSA CVL\Semester 1\Programmation C\td_matrices> .\test_ex1
 === Exercice 1 : matrice.c ===
@@ -54,6 +56,7 @@ Pensez a verifier l'absence de fuite : valgrind --leak-check=full ./test_ex1
 PS C:\Users\L\Desktop\INSA CVL\Semester 1\Programmation C\td_matrices> 
 
 ## Réponses aux questions de réflexion (Exercice 2)
+[matrice_io.c](matrice_io.c)
 
 ### Q4.1 :
 Cela permet de garantir que le résultat n’est transmis à *res que si toute la lecture réussit. Cela permet de valider le principe d'atomicité de la fonction en ne renvoyant que soit la matrice entièrement lue, soit une matrice vide.
@@ -67,7 +70,7 @@ Il suffit d’écrire les deux matrices successivement dans le même fichier ave
 ### Q4.4 :
 fflush permet de forcer l’écriture des données se trouvant dans le tampon du flux de sortie. Cela ne dispense pas l’appelant d'appeler fclose car fflush n'a aucun action sur la fermeture du fichier
 
-## Après test : 
+### Résultat test : 
 
 === Exercice 2 : affichage (verification visuelle) ===
 M (4 x 3) :
@@ -98,7 +101,7 @@ M (4 x 3) :
 Bilan : 14 / 14 verifications reussies.
 
 ## Réponses aux questions de réflexion (Exercice 3)
-
+[matrice_calcul.c](matrice_calcul.c)
 
 ### Q5.1 :
 Non const ne protège que les champs de la structure. Pour interdire cette affectation, il faudrait modifier la structure même en mettant les coefficients constants.
@@ -112,7 +115,7 @@ Il y a trois boucles imbriquées en a->nb_lignes, b->nb_colonnes, a->nb_colonnes
 ### Q5.4 :
 Car en C un dépassement de capacité pour une opération sur des entiers signés provoque un comportement indéfini et qu'additionner a à un nombre négatif soulèverais l'erreur bien qu'il n'y en n’a pas.
 
-## Après test : 
+### Résultat test : 
 
 === Exercice 3 : addition ===
 [OK]    (3.a) (2 x 3) + (3 x 2) : MAT_ERR_DIMENSIONS
@@ -134,31 +137,8 @@ Car en C un dépassement de capacité pour une opération sur des entiers signé
 
 Bilan : 14 / 14 verifications reussies.
 
-
-
-
-
-
-Vérifications mémoire :
-
-test_ex2
-HEAP SUMMARY:
-in use at exit: 0 bytes in 0 blocks
-total heap usage: 51 allocs, 51 frees, 49,976 bytes allocated
-
-All heap blocks were freed -- no leaks are possible
-
-test_ex3
-HEAP SUMMARY:
-in use at exit: 0 bytes in 0 blocks
-total heap usage: 37 allocs, 37 frees, 1,412 bytes allocated
-
-All heap blocks were freed -- no leaks are possible
-
-
----
-
 ## Réponses aux questions de réflexion (Exercice 4)
+[main.c](main.c)
 
 ### Q6.1 : 
 `mat_lire` est une fonction de bibliothèque : elle ne sait pas dans quel contexte elle est utilisée. Un programme en ligne de commande affiche ses erreurs sur `stderr` en texte brut, mais une interface graphique les afficherait dans une boîte de dialogue
@@ -174,7 +154,8 @@ En écriture, c'est différent. Les données passées à `fwrite` ou `fprintf` n
 
 Les trois matrices `a`, `b` et `r` ont été allouées avec succès, mais `sauvegarder` échoue. Il faut donc libérer **trois matrices**.
 
-## Après test : 
+### Résultat test : 
+
  gcc -std=c11 -Wall -Wextra -Wpedantic -g matrice.c matrice_alloc.c matrice_io.c matrice_calcul.c main.c -o demo_matrices
 PS C:\Users\L\Desktop\INSA CVL\Semester 1\Programmation C\td_matrices> ./demo_matrices add donnees/A.txt donnees/B.txt donnees/R_add.txt                                                       
 A (4 x 3) :
@@ -225,3 +206,26 @@ Erreur : lecture de "donnees/invalide.txt" : fichier mal form├®
 PS C:\Users\L\Desktop\INSA CVL\Semester 1\Programmation C\td_matrices> ./demo_matrices toto donnees/A.txt donnees/B.txt donnees/R.txt
 Usage : C:\Users\L\Desktop\INSA CVL\Semester 1\Programmation C\td_matrices\demo_matrices.exe <add|mul> <fichier_A><fichier_B> <fichier_R>
 PS C:\Users\L\Desktop\INSA CVL\Semester 1\Programmation C\td_matrices> 
+
+
+
+
+
+## Vérifications mémoire :
+
+### test ex2
+HEAP SUMMARY:
+in use at exit: 0 bytes in 0 blocks
+total heap usage: 51 allocs, 51 frees, 49,976 bytes allocated
+
+All heap blocks were freed -- no leaks are possible
+
+### test ex3
+HEAP SUMMARY:
+in use at exit: 0 bytes in 0 blocks
+total heap usage: 37 allocs, 37 frees, 1,412 bytes allocated
+
+All heap blocks were freed -- no leaks are possible
+
+
+
