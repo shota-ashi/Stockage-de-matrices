@@ -88,12 +88,24 @@ Le projet repose sur une découpe en quatre modules fonctionnels autonomes artic
 
 #### Chaîne des dépendances
 
-```text
-main.c
- ├── matrice_io.h     ──► matrice.h
- ├── matrice_calcul.h ──► matrice.h
- └── matrice_alloc.h  ──► matrice.h
-```
+       ┌────────────────┐        ┌──────────────────┐        ┌───────────────────┐
+       │  matrice_io.c  │        │  matrice_alloc.c │        │ matrice_calcul.c  │
+       └───────┬────────┘        └────────┬─────────┘        └─────────┬─────────┘
+               │           ╲              │                  ╱         │
+               ▼            ╲             ▼                 ╱          ▼
+       ┌────────────────┐    🡦   ┌──────────────────┐     🡧 ┌───────────────────┐
+       │  matrice_io.h  │        │ matrice_alloc.h  │        │ matrice_calcul.h  │
+       └───────┬────────┘        └────────┬─────────┘        └─────────┬─────────┘
+            ▲  │                          │                            │    ▲
+            │  │                          ▼                            │    │
+            │  │                 ┌──────────────────┐                  │    │
+            │  └────────────────▶│    matrice.h     │◀─────────────────┘   │
+            │                    └────────▲─────────┘                       │
+            │                             │                                 │ 
+            │  ┌────────────────┐         │                 ┌────────────────┐
+            │  │   matrice.c    │─────────┘──────────────────│    main.c      │
+            │  └────────────────┘                           └───────┬────────┘
+            └───────────────────────────────────────────────────────┘
 
 Comme `main.c` fait appel à plusieurs modules qui incluent tous `matrice.h`, le préprocesseur risquerait de copier plusieurs fois les mêmes définitions dans le code final. Sans protection, cela provoquerait une erreur de redéfinition au moment de la compilation.
 
@@ -111,9 +123,13 @@ Ceci garantit que le contenu du fichier n'est évalué qu'une seule fois par le 
 
 Pour prévenir toute fuite de mémoire et éviter les erreurs courantes (pointeurs sauvages, double libération), nous avons appliqué les règles suivantes :
 
-- **Règle 1** : toute fonction qui instancie une matrice transfère l'entière propriété de la zone mémoire à l'appelant. C'est à lui qu'il revient de planifier sa libération.
-- **Règle 2** : les fonctions de traitement ou d'affichage prennent des pointeurs constants. Elles lisent les données sans jamais modifier ni libérer la mémoire reçue.
-- **Règle 3** : tout bloc alloué doit impérativement être libéré via `mat_detruire` dès qu'il n'est plus nécessaire.
+R1 Toute variable Matrice est initialisée à MATRICE_VIDE dès sa déclaration.
+R2 Une fonction qui réussit (MAT_OK) et remplit *res transfère la propriété du résultat à l’appelant, qui devra appeler mat_detruire(&res).
+R3 Une fonction qui échoue laisse *res égal à MATRICE_VIDE et a libéré tout ce qu’elle avait alloué : l’appelant n’a rien à libérer.
+R4 Une fonction ne modifie et ne libère jamais une matrice reçue en entrée (const Matrice *).
+R5 *res est un paramètre de sortie : son ancien contenu est écrasé. S’il possédait de la mémoire, l’appelant doit l’avoir détruite avant l’appel. res doit être distinct des entrées.
+R6 mat_detruire remet la matrice à MATRICE_VIDE : un second appel est sans effet.
+R7 Un fichier est fermé par le code qui l’a ouvert. Les fonctions de matrice_io reçoivent un flux déjà ouvert et ne le ferment jamais.
 
 **En cas d'échec** : si une allocation échoue, la structure est réinitialisée dans un état neutre et sécurisé. Cela permet d'appeler `mat_detruire` sur la matrice sans risque de plantage.
 
@@ -169,6 +185,170 @@ clean:
 ## 3. Réalisation
 
 ### 3.1. Code commenté
+
+#### Exercice 1 : Allocation et destruction
+
+    /* (1.b) Complété : renvoie 1 si les quatre conditions sont vraies. */
+    return m != NULL
+        && m->coef != NULL
+        && 1 <= m->nb_lignes   && m->nb_lignes   <= MAT_DIM_MAX
+        && 1 <= m->nb_colonnes && m->nb_colonnes <= MAT_DIM_MAX;
+
+    /* (1.c) Complété : validation des dimensions. */
+    if (nb_lignes < 1 || nb_lignes > MAT_DIM_MAX ||
+        nb_colonnes < 1 || nb_colonnes > MAT_DIM_MAX)
+        return MAT_ERR_ARGUMENT;
+
+    /* (1.d) Complété : allocation de chaque ligne avec rollback en cas d'échec. */
+    for (int i = 0; i < nb_lignes; i++) {
+        coef[i] = mat_calloc((size_t)nb_colonnes, sizeof *coef[i]);
+        if (coef[i] == NULL) {
+            for (int k = i - 1; k >= 0; k--)
+                free(coef[k]);
+            free(coef);
+            return MAT_ERR_ALLOCATION;
+        }
+    }
+    
+    /* (1.e) Complété : succès, on remplit *res et on retourne MAT_OK. */
+    res->coef        = coef;
+    res->nb_lignes   = nb_lignes;
+    res->nb_colonnes = nb_colonnes;
+    return MAT_OK;
+
+    /* (1.f) Complété : libération de chaque ligne puis du tableau. */
+    if (m->coef != NULL) {
+        for (int i = 0; i < m->nb_lignes; i++)
+            free(m->coef[i]);
+        free(m->coef);
+    }
+
+#### Exercice 2 : Entrées-sorties
+ /* (2.a) COMPLÉTÉ : pour chaque ligne i, afficher chaque
+     *       coefficient avec printf(" %8d", m->coef[i][j]),
+     *       puis passer à la ligne avec putchar('\n').               */
+    
+    for (int i = 0; i < m->nb_lignes; i++) {
+        for (int j = 0; j < m->nb_colonnes; j++)
+            printf(" %8d", m->coef[i][j]);
+        putchar('\n');
+    }
+
+     /* (2.b) COMPLÉTÉ : pour chaque ligne i de la matrice :
+     *         - écrire les coefficients séparés par UN espace :
+     *             le premier (j == 0) avec "%d", les autres avec " %d" ;
+     *         - terminer la ligne avec fputc('\n', f) ;
+     *         - si un fprintf renvoie un nombre < 0, ou si fputc
+     *           renvoie EOF : return MAT_ERR_ECRITURE;               */
+    for (int i = 0; i < m->nb_lignes; i++) {
+        for (int j = 0; j < m->nb_colonnes; j++) {
+            if (fprintf(f, j == 0 ? "%d" : " %d", m->coef[i][j]) < 0)
+                return MAT_ERR_ECRITURE;
+        }
+        if (fputc('\n', f) == EOF)
+            return MAT_ERR_ECRITURE;
+    }
+
+    /* (2.c) COMPLÉTÉ : si nb_lignes ou nb_colonnes n'est pas compris
+     *       entre 1 et MAT_DIM_MAX, renvoyer MAT_ERR_FORMAT
+     *       (c'est le contenu du fichier qui est faux).               */
+    if (nb_lignes < 1 || nb_lignes > MAT_DIM_MAX || nb_colonnes < 1 || nb_colonnes > MAT_DIM_MAX)
+        return MAT_ERR_FORMAT;
+
+    /* (2.d) COMPLÉTÉ : déclarer une matrice LOCALE et l'allouer :
+     *         Matrice tmp;
+     *         err = mat_allouer(&tmp, nb_lignes, nb_colonnes);
+     *         if (err != MAT_OK) return err;                          */
+    Matrice tmp;
+    err = mat_allouer(&tmp, nb_lignes, nb_colonnes);
+    if (err != MAT_OK)
+        return err;
+
+    /* (2.e) COMPLÉTÉ : deux boucles imbriquées (i, puis j) qui lisent
+     *       chaque coefficient avec lire_entier(f, &tmp.coef[i][j]).
+     *       Si une lecture échoue :
+     *         mat_detruire(&tmp);  return err;                        */
+    for (int i = 0; i < tmp.nb_lignes; i++) {
+        for (int j = 0; j < tmp.nb_colonnes; j++) {
+            err = lire_entier(f, &tmp.coef[i][j]);
+            if (err != MAT_OK) {
+                mat_detruire(&tmp);
+                return err;
+            }
+        }
+    }
+
+    /* (2.f) COMPLÉTÉ : tout a réussi, on transfère le résultat :
+     *         *res = tmp;  return MAT_OK;                             */
+    *res = tmp;
+    return MAT_OK;
+
+#### Exercice 3 : Calcul matriciel
+
+    /* (3.a) Vérifie que A et B ont les mêmes dimensions. */
+    if (a->nb_lignes != b->nb_lignes || a->nb_colonnes != b->nb_colonnes)
+        return MAT_ERR_DIMENSIONS;
+
+    /* (3.b) Alloue r avec les dimensions de a. */
+    Matrice r = MATRICE_VIDE;
+    err = mat_allouer(&r, a->nb_lignes, a->nb_colonnes);
+    if (err != MAT_OK)
+        return err;
+
+    /* (3.d) Transfère le résultat. */
+    *res = r;
+    return MAT_OK;
+
+    /* (3.e) Le produit A x B n'existe que si colonnes(A) == lignes(B). */
+    if (a->nb_colonnes != b->nb_lignes)
+        return MAT_ERR_DIMENSIONS;
+
+    /* (3.f) Alloue r de dimensions lignes(A) x colonnes(B). */
+    Matrice r = MATRICE_VIDE;
+    err = mat_allouer(&r, a->nb_lignes, b->nb_colonnes);
+    if (err != MAT_OK)
+        return err;
+
+           /* (3.g) Produit scalaire de la ligne i de A et colonne j de B. */
+            for (int k = 0; k < a->nb_colonnes; k++) {
+                long long p = (long long)a->coef[i][k] * b->coef[k][j];
+                if ((p > 0 && s > LLONG_MAX - p)
+                    || (p < 0 && s < LLONG_MIN - p)) {
+                    mat_detruire(&r);
+                    return MAT_ERR_DEPASSEMENT;
+                }
+                s += p;
+            }
+
+    /* (3.h) Transfère le résultat. */
+    *res = r;
+    return MAT_OK;
+
+#### Exercice 4 : Démonstration complète
+
+    /* (4.a) Affichage des matrices chargées. */
+    mat_afficher("A", &a);
+    mat_afficher("B", &b);
+
+    /* (4.b) Calcul du résultat. */
+    MatErreur err = addition ? mat_additionner(&a, &b, &r)
+                             : mat_multiplier(&a, &b, &r);
+    if (err != MAT_OK) {
+        fprintf(stderr,
+                "Erreur : %s "
+                "(A : %d x %d, B : %d x %d)\n",
+                mat_message_erreur(err),
+                a.nb_lignes, a.nb_colonnes,
+                b.nb_lignes, b.nb_colonnes);
+        goto nettoyage;
+    }
+
+    /* (4.c) Affichage du résultat. */
+    mat_afficher(addition ? "R = A + B" : "R = A x B", &r);
+
+    /* (4.d) Succès : confirmation et mise à jour du statut. */
+    printf("Résultat enregistré dans \"%s\".\n", argv[4]);
+    statut = EXIT_SUCCESS;
 
 ### 3.2. Réponses rédigées aux questions de réflexion et sorties du test
 
@@ -527,7 +707,7 @@ Résultat attendu : l'erreur est signalée proprement (message explicite et code
 
 ### 4.3. Bilan et difficultés
 
-- **Multiplication `R_mul`** : la commande `demo_matrices mul donnees/B.txt donnees/C.txt` calcule bien le produit matriciel $B \times C$ ($4 \times 3$ par $3 \times 2$, soit une matrice $4 \times 2$). Le programme affiche de façon générique « A » pour le premier fichier passé en argument et « B » pour le second, ce qui avait fait croire à tort que le résultat ne correspondait pas à $A \times C$.
+- L'ajout de fichier .txt lors de test aillant provoquer la confusion entre les données réelle et les sorties oubliées.
 - **`fflush`** : compréhension de son rôle (vidage du tampon sans fermeture du flux).
 
 #### Répartition du travail
