@@ -186,170 +186,207 @@ clean:
 
 ### 3.1. Code commenté
 
-#### Exercice 1 : Allocation et destruction
+Extraits des parties complétées dans chaque module ; les repères `(1.b)`, `(2.a)`… correspondent aux étapes du sujet.
 
-    /* (1.b) Complété : renvoie 1 si les quatre conditions sont vraies. */
-    return m != NULL
-        && m->coef != NULL
-        && 1 <= m->nb_lignes   && m->nb_lignes   <= MAT_DIM_MAX
-        && 1 <= m->nb_colonnes && m->nb_colonnes <= MAT_DIM_MAX;
+#### Code de l'exercice 1 : Allocation et destruction
 
-    /* (1.c) Complété : validation des dimensions. */
-    if (nb_lignes < 1 || nb_lignes > MAT_DIM_MAX ||
-        nb_colonnes < 1 || nb_colonnes > MAT_DIM_MAX)
-        return MAT_ERR_ARGUMENT;
+**Extrait de `matrice.c` : validité d'une matrice**
 
-    /* (1.d) Complété : allocation de chaque ligne avec rollback en cas d'échec. */
-    for (int i = 0; i < nb_lignes; i++) {
-        coef[i] = mat_calloc((size_t)nb_colonnes, sizeof *coef[i]);
-        if (coef[i] == NULL) {
-            for (int k = i - 1; k >= 0; k--)
-                free(coef[k]);
-            free(coef);
-            return MAT_ERR_ALLOCATION;
-        }
+```c
+/* (1.b) Complété : renvoie 1 si les quatre conditions sont vraies. */
+return m != NULL
+    && m->coef != NULL
+    && 1 <= m->nb_lignes   && m->nb_lignes   <= MAT_DIM_MAX
+    && 1 <= m->nb_colonnes && m->nb_colonnes <= MAT_DIM_MAX;
+```
+
+**Extrait de `matrice_alloc.c` : `mat_allouer`**
+
+```c
+/* (1.c) Complété : validation des dimensions. */
+if (nb_lignes < 1 || nb_lignes > MAT_DIM_MAX ||
+    nb_colonnes < 1 || nb_colonnes > MAT_DIM_MAX)
+    return MAT_ERR_ARGUMENT;
+
+/* (1.d) Complété : allocation de chaque ligne avec rollback en cas d'échec. */
+for (int i = 0; i < nb_lignes; i++) {
+    coef[i] = mat_calloc((size_t)nb_colonnes, sizeof *coef[i]);
+    if (coef[i] == NULL) {
+        for (int k = i - 1; k >= 0; k--)
+            free(coef[k]);
+        free(coef);
+        return MAT_ERR_ALLOCATION;
     }
-    
-    /* (1.e) Complété : succès, on remplit *res et on retourne MAT_OK. */
-    res->coef        = coef;
-    res->nb_lignes   = nb_lignes;
-    res->nb_colonnes = nb_colonnes;
-    return MAT_OK;
+}
 
-    /* (1.f) Complété : libération de chaque ligne puis du tableau. */
-    if (m->coef != NULL) {
-        for (int i = 0; i < m->nb_lignes; i++)
-            free(m->coef[i]);
-        free(m->coef);
-    }
+/* (1.e) Complété : succès, on remplit *res et on retourne MAT_OK. */
+res->coef        = coef;
+res->nb_lignes   = nb_lignes;
+res->nb_colonnes = nb_colonnes;
+return MAT_OK;
+```
 
-#### Exercice 2 : Entrées-sorties
- /* (2.a) COMPLÉTÉ : pour chaque ligne i, afficher chaque
-     *       coefficient avec printf(" %8d", m->coef[i][j]),
-     *       puis passer à la ligne avec putchar('\n').               */
-    
-    for (int i = 0; i < m->nb_lignes; i++) {
-        for (int j = 0; j < m->nb_colonnes; j++)
-            printf(" %8d", m->coef[i][j]);
-        putchar('\n');
-    }
+**Extrait de `matrice_alloc.c` : `mat_detruire`**
 
-     /* (2.b) COMPLÉTÉ : pour chaque ligne i de la matrice :
-     *         - écrire les coefficients séparés par UN espace :
-     *             le premier (j == 0) avec "%d", les autres avec " %d" ;
-     *         - terminer la ligne avec fputc('\n', f) ;
-     *         - si un fprintf renvoie un nombre < 0, ou si fputc
-     *           renvoie EOF : return MAT_ERR_ECRITURE;               */
-    for (int i = 0; i < m->nb_lignes; i++) {
-        for (int j = 0; j < m->nb_colonnes; j++) {
-            if (fprintf(f, j == 0 ? "%d" : " %d", m->coef[i][j]) < 0)
-                return MAT_ERR_ECRITURE;
-        }
-        if (fputc('\n', f) == EOF)
+```c
+/* (1.f) Complété : libération de chaque ligne puis du tableau. */
+if (m->coef != NULL) {
+    for (int i = 0; i < m->nb_lignes; i++)
+        free(m->coef[i]);
+    free(m->coef);
+}
+```
+
+#### Code de l'exercice 2 : Entrées-sorties
+
+**Extrait de `matrice_io.c` : `mat_afficher`**
+
+```c
+/* (2.a) COMPLÉTÉ : pour chaque ligne i, afficher chaque
+ *       coefficient avec printf(" %8d", m->coef[i][j]),
+ *       puis passer à la ligne avec putchar('\n'). */
+for (int i = 0; i < m->nb_lignes; i++) {
+    for (int j = 0; j < m->nb_colonnes; j++)
+        printf(" %8d", m->coef[i][j]);
+    putchar('\n');
+}
+```
+
+**Extrait de `matrice_io.c` : `mat_ecrire`**
+
+```c
+/* (2.b) COMPLÉTÉ : pour chaque ligne i de la matrice :
+ *         - écrire les coefficients séparés par UN espace :
+ *             le premier (j == 0) avec "%d", les autres avec " %d" ;
+ *         - terminer la ligne avec fputc('\n', f) ;
+ *         - si un fprintf renvoie un nombre < 0, ou si fputc
+ *           renvoie EOF : return MAT_ERR_ECRITURE; */
+for (int i = 0; i < m->nb_lignes; i++) {
+    for (int j = 0; j < m->nb_colonnes; j++) {
+        if (fprintf(f, j == 0 ? "%d" : " %d", m->coef[i][j]) < 0)
             return MAT_ERR_ECRITURE;
     }
+    if (fputc('\n', f) == EOF)
+        return MAT_ERR_ECRITURE;
+}
+```
 
-    /* (2.c) COMPLÉTÉ : si nb_lignes ou nb_colonnes n'est pas compris
-     *       entre 1 et MAT_DIM_MAX, renvoyer MAT_ERR_FORMAT
-     *       (c'est le contenu du fichier qui est faux).               */
-    if (nb_lignes < 1 || nb_lignes > MAT_DIM_MAX || nb_colonnes < 1 || nb_colonnes > MAT_DIM_MAX)
-        return MAT_ERR_FORMAT;
+**Extrait de `matrice_io.c` : `mat_lire`**
 
-    /* (2.d) COMPLÉTÉ : déclarer une matrice LOCALE et l'allouer :
-     *         Matrice tmp;
-     *         err = mat_allouer(&tmp, nb_lignes, nb_colonnes);
-     *         if (err != MAT_OK) return err;                          */
-    Matrice tmp;
-    err = mat_allouer(&tmp, nb_lignes, nb_colonnes);
-    if (err != MAT_OK)
-        return err;
+```c
+/* (2.c) COMPLÉTÉ : si nb_lignes ou nb_colonnes n'est pas compris
+ *       entre 1 et MAT_DIM_MAX, renvoyer MAT_ERR_FORMAT
+ *       (c'est le contenu du fichier qui est faux). */
+if (nb_lignes < 1 || nb_lignes > MAT_DIM_MAX || nb_colonnes < 1 || nb_colonnes > MAT_DIM_MAX)
+    return MAT_ERR_FORMAT;
 
-    /* (2.e) COMPLÉTÉ : deux boucles imbriquées (i, puis j) qui lisent
-     *       chaque coefficient avec lire_entier(f, &tmp.coef[i][j]).
-     *       Si une lecture échoue :
-     *         mat_detruire(&tmp);  return err;                        */
-    for (int i = 0; i < tmp.nb_lignes; i++) {
-        for (int j = 0; j < tmp.nb_colonnes; j++) {
-            err = lire_entier(f, &tmp.coef[i][j]);
-            if (err != MAT_OK) {
-                mat_detruire(&tmp);
-                return err;
-            }
+/* (2.d) COMPLÉTÉ : déclarer une matrice LOCALE et l'allouer :
+ *         Matrice tmp;
+ *         err = mat_allouer(&tmp, nb_lignes, nb_colonnes);
+ *         if (err != MAT_OK) return err; */
+Matrice tmp;
+err = mat_allouer(&tmp, nb_lignes, nb_colonnes);
+if (err != MAT_OK)
+    return err;
+
+/* (2.e) COMPLÉTÉ : deux boucles imbriquées (i, puis j) qui lisent
+ *       chaque coefficient avec lire_entier(f, &tmp.coef[i][j]).
+ *       Si une lecture échoue :
+ *         mat_detruire(&tmp);  return err; */
+for (int i = 0; i < tmp.nb_lignes; i++) {
+    for (int j = 0; j < tmp.nb_colonnes; j++) {
+        err = lire_entier(f, &tmp.coef[i][j]);
+        if (err != MAT_OK) {
+            mat_detruire(&tmp);
+            return err;
         }
     }
+}
 
-    /* (2.f) COMPLÉTÉ : tout a réussi, on transfère le résultat :
-     *         *res = tmp;  return MAT_OK;                             */
-    *res = tmp;
-    return MAT_OK;
+/* (2.f) COMPLÉTÉ : tout a réussi, on transfère le résultat :
+ *         *res = tmp;  return MAT_OK; */
+*res = tmp;
+return MAT_OK;
+```
 
-#### Exercice 3 : Calcul matriciel
+#### Code de l'exercice 3 : Calcul matriciel
 
-    /* (3.a) Vérifie que A et B ont les mêmes dimensions. */
-    if (a->nb_lignes != b->nb_lignes || a->nb_colonnes != b->nb_colonnes)
-        return MAT_ERR_DIMENSIONS;
+**Extrait de `matrice_calcul.c` : `mat_additionner`**
 
-    /* (3.b) Alloue r avec les dimensions de a. */
-    Matrice r = MATRICE_VIDE;
-    err = mat_allouer(&r, a->nb_lignes, a->nb_colonnes);
-    if (err != MAT_OK)
-        return err;
+```c
+/* (3.a) Vérifie que A et B ont les mêmes dimensions. */
+if (a->nb_lignes != b->nb_lignes || a->nb_colonnes != b->nb_colonnes)
+    return MAT_ERR_DIMENSIONS;
 
-    /* (3.d) Transfère le résultat. */
-    *res = r;
-    return MAT_OK;
+/* (3.b) Alloue r avec les dimensions de a. */
+Matrice r = MATRICE_VIDE;
+err = mat_allouer(&r, a->nb_lignes, a->nb_colonnes);
+if (err != MAT_OK)
+    return err;
 
-    /* (3.e) Le produit A x B n'existe que si colonnes(A) == lignes(B). */
-    if (a->nb_colonnes != b->nb_lignes)
-        return MAT_ERR_DIMENSIONS;
+/* (3.d) Transfère le résultat. */
+*res = r;
+return MAT_OK;
+```
 
-    /* (3.f) Alloue r de dimensions lignes(A) x colonnes(B). */
-    Matrice r = MATRICE_VIDE;
-    err = mat_allouer(&r, a->nb_lignes, b->nb_colonnes);
-    if (err != MAT_OK)
-        return err;
+**Extrait de `matrice_calcul.c` : `mat_multiplier`**
 
-           /* (3.g) Produit scalaire de la ligne i de A et colonne j de B. */
-            for (int k = 0; k < a->nb_colonnes; k++) {
-                long long p = (long long)a->coef[i][k] * b->coef[k][j];
-                if ((p > 0 && s > LLONG_MAX - p)
-                    || (p < 0 && s < LLONG_MIN - p)) {
-                    mat_detruire(&r);
-                    return MAT_ERR_DEPASSEMENT;
-                }
-                s += p;
-            }
+```c
+/* (3.e) Le produit A x B n'existe que si colonnes(A) == lignes(B). */
+if (a->nb_colonnes != b->nb_lignes)
+    return MAT_ERR_DIMENSIONS;
 
-    /* (3.h) Transfère le résultat. */
-    *res = r;
-    return MAT_OK;
+/* (3.f) Alloue r de dimensions lignes(A) x colonnes(B). */
+Matrice r = MATRICE_VIDE;
+err = mat_allouer(&r, a->nb_lignes, b->nb_colonnes);
+if (err != MAT_OK)
+    return err;
 
-#### Exercice 4 : Démonstration complète
-
-    /* (4.a) Affichage des matrices chargées. */
-    mat_afficher("A", &a);
-    mat_afficher("B", &b);
-
-    /* (4.b) Calcul du résultat. */
-    MatErreur err = addition ? mat_additionner(&a, &b, &r)
-                             : mat_multiplier(&a, &b, &r);
-    if (err != MAT_OK) {
-        fprintf(stderr,
-                "Erreur : %s "
-                "(A : %d x %d, B : %d x %d)\n",
-                mat_message_erreur(err),
-                a.nb_lignes, a.nb_colonnes,
-                b.nb_lignes, b.nb_colonnes);
-        goto nettoyage;
+/* (3.g) Produit scalaire de la ligne i de A et colonne j de B. */
+for (int k = 0; k < a->nb_colonnes; k++) {
+    long long p = (long long)a->coef[i][k] * b->coef[k][j];
+    if ((p > 0 && s > LLONG_MAX - p)
+        || (p < 0 && s < LLONG_MIN - p)) {
+        mat_detruire(&r);
+        return MAT_ERR_DEPASSEMENT;
     }
+    s += p;
+}
 
-    /* (4.c) Affichage du résultat. */
-    mat_afficher(addition ? "R = A + B" : "R = A x B", &r);
+/* (3.h) Transfère le résultat. */
+*res = r;
+return MAT_OK;
+```
 
-    /* (4.d) Succès : confirmation et mise à jour du statut. */
-    printf("Résultat enregistré dans \"%s\".\n", argv[4]);
-    statut = EXIT_SUCCESS;
+#### Code de l'exercice 4 : Démonstration complète
 
+**Extrait de `main.c` : fonction `main`**
+
+```c
+/* (4.a) Affichage des matrices chargées. */
+mat_afficher("A", &a);
+mat_afficher("B", &b);
+
+/* (4.b) Calcul du résultat. */
+MatErreur err = addition ? mat_additionner(&a, &b, &r)
+                         : mat_multiplier(&a, &b, &r);
+if (err != MAT_OK) {
+    fprintf(stderr,
+            "Erreur : %s "
+            "(A : %d x %d, B : %d x %d)\n",
+            mat_message_erreur(err),
+            a.nb_lignes, a.nb_colonnes,
+            b.nb_lignes, b.nb_colonnes);
+    goto nettoyage;
+}
+
+/* (4.c) Affichage du résultat. */
+mat_afficher(addition ? "R = A + B" : "R = A x B", &r);
+
+/* (4.d) Succès : confirmation et mise à jour du statut. */
+printf("Résultat enregistré dans \"%s\".\n", argv[4]);
+statut = EXIT_SUCCESS;
+```
 ### 3.2. Réponses rédigées aux questions de réflexion et sorties du test
 
 #### Exercice 1 : Allocation et destruction
